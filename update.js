@@ -44,7 +44,7 @@ function formatPnL(pnl, currency) {
 async function getStockInfo(ticker) {
   try {
     const quote = await yahooFinance.quoteSummary(ticker, {
-      modules: ['price', 'summaryProfile', 'assetProfile']
+      modules: ['price', 'summaryProfile', 'summaryDetail', 'assetProfile']
     });
 
     const price    = quote.price?.regularMarketPrice ?? null;
