@@ -12,71 +12,6 @@ const headers = {
 
 const g = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
-// 산업명 영어 → 한국어
-const INDUSTRY_KO = {
-  "Semiconductors":                       "반도체",
-  "Semiconductor Equipment & Materials":  "반도체 장비",
-  "Consumer Electronics":                 "소비자 전자기기",
-  "Internet Content & Information":       "인터넷/콘텐츠",
-  "Footwear & Accessories":               "신발/의류",
-  "Apparel Manufacturing":                "의류 제조",
-  "Software—Application":                 "소프트웨어",
-  "Software—Infrastructure":             "소프트웨어 인프라",
-  "Technology":                           "기술",
-  "Information Technology Services":      "IT 서비스",
-  "Computer Hardware":                    "컴퓨터 하드웨어",
-  "Electronic Components":                "전자 부품",
-  "Real Estate":                          "부동산",
-  "REIT—Diversified":                     "리츠 (복합)",
-  "REIT—Office":                          "리츠 (오피스)",
-  "REIT—Industrial":                      "리츠 (산업)",
-  "REIT—Data Center":                     "리츠 (데이터센터)",
-  "Financial Services":                   "금융 서비스",
-  "Banks—Diversified":                    "은행 (종합)",
-  "Asset Management":                     "자산 운용",
-  "Insurance—Diversified":                "보험",
-  "Healthcare":                           "헬스케어",
-  "Biotechnology":                        "바이오",
-  "Drug Manufacturers—General":           "제약",
-  "Medical Devices":                      "의료기기",
-  "Communication Services":               "통신 서비스",
-  "Telecom Services":                     "통신",
-  "Entertainment":                        "엔터테인먼트",
-  "Electronic Gaming & Multimedia":       "게임/미디어",
-  "Auto Manufacturers":                   "자동차 제조",
-  "Auto Parts":                           "자동차 부품",
-  "Oil & Gas E&P":                        "석유/가스",
-  "Oil & Gas Integrated":                 "석유/가스 (통합)",
-  "Specialty Chemicals":                  "특수 화학",
-  "Agricultural Inputs":                  "농업",
-  "Aerospace & Defense":                  "항공/방위",
-  "Airlines":                             "항공사",
-  "Retail—Specialty":                     "소매 (전문)",
-  "Retail—Cyclical":                      "소매 (경기)",
-  "Grocery Stores":                       "식품 유통",
-  "Restaurants":                          "외식",
-  "Beverages—Non-Alcoholic":             "음료 (비알코올)",
-  "Beverages—Alcoholic":                 "음료 (알코올)",
-  "Packaged Foods":                       "식품 패키지",
-  "Consumer Defensive":                   "필수 소비재",
-  "Utilities—Regulated Electric":         "전력 (규제)",
-  "Utilities—Renewable":                  "재생에너지",
-  "Industrial Conglomerates":             "복합 산업",
-  "Specialty Industrial Machinery":       "산업 기계",
-  "Tools & Accessories":                  "공구/부품",
-  "Staffing & Employment Services":       "인력 서비스",
-  "Advertising Agencies":                 "광고",
-  "Publishing":                           "출판/미디어",
-  "Security & Protection Services":       "보안 서비스",
-  "Consulting Services":                  "컨설팅",
-  "混合":                                  "혼합",
-};
-
-function toKo(industry) {
-  if (!industry) return null;
-  return INDUSTRY_KO[industry] ?? industry;
-}
-
 function formatPrice(price, currency) {
   if (price === null || price === undefined) return null;
   if (currency === "KRW") {
@@ -85,36 +20,55 @@ function formatPrice(price, currency) {
   return `$${(Math.round(price * 100) / 100).toLocaleString("en-US")}`;
 }
 
+function parsePrice(text) {
+  if (!text) return null;
+  const cleaned = text.replace(/[$₩,\s]/g, "");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+}
+
+function formatReturn(pct) {
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(2)}%`;
+}
+
+function formatPnL(pnl, currency) {
+  const sign = pnl >= 0 ? "+" : "-";
+  const abs = Math.abs(pnl);
+  if (currency === "KRW") {
+    return `${sign}₩${Math.round(abs).toLocaleString("ko-KR")}`;
+  }
+  return `${sign}$${(Math.round(abs * 100) / 100).toLocaleString("en-US")}`;
+}
+
 async function getStockInfo(ticker) {
   try {
     const quote = await yahooFinance.quoteSummary(ticker, {
-      modules: ['price', 'summaryProfile', 'summaryDetail', 'assetProfile']
+      modules: ['price', 'summaryProfile', 'assetProfile']
     });
 
     const price    = quote.price?.regularMarketPrice ?? null;
     const currency = quote.price?.currency === "KRW" ? "KRW" : "USD";
     const name     = quote.price?.shortName ?? quote.price?.longName ?? null;
     const dividend = quote.summaryDetail?.dividendRate ?? 0;
-    const industryRaw = quote.assetProfile?.industry
-                     ?? quote.summaryProfile?.industry
-                     ?? quote.summaryProfile?.category
-                     ?? null;
-    const industry = toKo(industryRaw);
     const website  = quote.assetProfile?.website ?? quote.summaryProfile?.website ?? null;
     const domain   = website ? new URL(website).hostname.replace("www.", "") : null;
 
-    return { price, currency, name, dividend, industry, logoUrl: domain ? g(domain) : null };
+    return { price, currency, name, dividend, logoUrl: domain ? g(domain) : null };
   } catch (e) {
     console.log(`  ⚠️  ${ticker} 조회 실패: ${e.message}`);
-    return { price: null, currency: null, name: null, dividend: null, industry: null, logoUrl: null };
+    return { price: null, currency: null, name: null, dividend: null, logoUrl: null };
   }
 }
 
 async function updatePage(page, info) {
-  const currentName  = page.properties["이름"].title[0]?.plain_text ?? "";
-  const currentIndustry = page.properties["산업"]?.select?.name ?? null;
-  const ticker = page.properties["티커"].rich_text[0]?.plain_text ?? "";
-  const hasIcon = !!page.icon;
+  const currentName = page.properties["이름"].title[0]?.plain_text ?? "";
+  const ticker      = page.properties["티커"].rich_text[0]?.plain_text ?? "";
+  const hasIcon     = !!page.icon;
+
+  const buyPriceText = page.properties["매입가"]?.rich_text[0]?.plain_text ?? null;
+  const quantity     = page.properties["잔고"]?.number ?? null;
+  const buyPrice     = parsePrice(buyPriceText);
 
   const body = { properties: {} };
 
@@ -123,21 +77,24 @@ async function updatePage(page, info) {
     body.properties["이름"] = { title: [{ text: { content: info.name } }] };
   }
 
-  // 오늘의 주가: 통화 기호 포함 텍스트
+  // 실시간 주가
   if (info.price !== null) {
-    body.properties["오늘의 주가"] = {
+    body.properties["실시간 주가"] = {
       rich_text: [{ text: { content: formatPrice(info.price, info.currency) } }]
     };
   }
 
-  // 주당 배당금: 숫자 유지
+  // 주당 배당금
   if (info.dividend !== null) {
     body.properties["주당 배당금"] = { number: Math.round(info.dividend * 100) / 100 };
   }
 
-  // 산업: 비어있을 때만 채우기 (한국어)
-  if (info.industry && !currentIndustry) {
-    body.properties["산업"] = { select: { name: info.industry } };
+  // 수익률 & 평가손익: 매입가와 잔고가 있을 때만 계산
+  if (buyPrice !== null && quantity !== null && info.price !== null) {
+    const pct = (info.price - buyPrice) / buyPrice * 100;
+    const pnl = (info.price - buyPrice) * quantity;
+    body.properties["수익률"]  = { rich_text: [{ text: { content: formatReturn(pct) } }] };
+    body.properties["평가손익"] = { rich_text: [{ text: { content: formatPnL(pnl, info.currency) } }] };
   }
 
   // 로고: 없을 때만 추가
@@ -171,9 +128,19 @@ async function updatePage(page, info) {
     await updatePage(page, info);
 
     const priceStr = info.price ? formatPrice(info.price, info.currency) : "실패";
-    const divStr   = info.dividend ? ` / 배당 ${formatPrice(info.dividend, info.currency)}` : "";
-    const logoStr  = (!page.icon && info.logoUrl) ? " + 로고" : "";
-    console.log(`✅ ${priceStr}${divStr}${logoStr}`);
+    const divStr   = info.dividend ? ` | 배당 ${formatPrice(info.dividend, info.currency)}` : "";
+
+    const buyPriceText = page.properties["매입가"]?.rich_text[0]?.plain_text ?? null;
+    const quantity     = page.properties["잔고"]?.number ?? null;
+    const buyPrice     = parsePrice(buyPriceText);
+    let returnStr = "";
+    if (buyPrice !== null && quantity !== null && info.price !== null) {
+      const pct = (info.price - buyPrice) / buyPrice * 100;
+      const pnl = (info.price - buyPrice) * quantity;
+      returnStr = ` | ${formatReturn(pct)} (${formatPnL(pnl, info.currency)})`;
+    }
+
+    console.log(`✅ ${priceStr}${divStr}${returnStr}`);
   }
 
   console.log("\n🎉 완료!");
