@@ -2,7 +2,11 @@ const yf = require('yahoo-finance2');
 const yahooFinance = new yf.default({ suppressNotices: ['yahooSurvey'] });
 
 const TOKEN = process.env.NOTION_TOKEN;
-const DB_ID = process.env.NOTION_DB_ID || "35c3ef3c-392f-81e3-8fe1-dba9cd5a280a";
+
+const DB_IDS = [
+  process.env.NOTION_DB_ID       || "35c3ef3c-392f-81e3-8fe1-dba9cd5a280a", // 보유 종목
+  process.env.NOTION_WATCHLIST_ID || "35c3ef3c-392f-8130-a0ad-d425edc9b3b7", // 관심 종목
+];
 
 const headers = {
   "Authorization": `Bearer ${TOKEN}`,
@@ -72,24 +76,20 @@ async function updatePage(page, info) {
 
   const body = { properties: {} };
 
-  // 이름: 비어있거나 티커랑 같으면 자동 채우기
   if (info.name && (!currentName || currentName === ticker)) {
     body.properties["이름"] = { title: [{ text: { content: info.name } }] };
   }
 
-  // 실시간 주가
   if (info.price !== null) {
     body.properties["실시간 주가"] = {
       rich_text: [{ text: { content: formatPrice(info.price, info.currency) } }]
     };
   }
 
-  // 주당 배당금
   if (info.dividend !== null) {
     body.properties["주당 배당금"] = { number: Math.round(info.dividend * 100) / 100 };
   }
 
-  // 수익률 & 평가손익: 매입가와 잔고가 있을 때만 계산
   if (buyPrice !== null && quantity !== null && info.price !== null) {
     const pct = (info.price - buyPrice) / buyPrice * 100;
     const pnl = (info.price - buyPrice) * quantity;
@@ -97,7 +97,6 @@ async function updatePage(page, info) {
     body.properties["평가손익"] = { rich_text: [{ text: { content: formatPnL(pnl, info.currency) } }] };
   }
 
-  // 로고: 없을 때만 추가
   if (info.logoUrl && !hasIcon) {
     body.icon = { type: "external", external: { url: info.logoUrl } };
   }
@@ -111,10 +110,8 @@ async function updatePage(page, info) {
   }
 }
 
-(async () => {
-  console.log("📊 포트폴리오 업데이트 시작...\n");
-
-  const res = await fetch(`https://api.notion.com/v1/databases/${DB_ID}/query`, {
+async function updateDatabase(dbId) {
+  const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
     method: "POST", headers, body: JSON.stringify({})
   });
   const data = await res.json();
@@ -141,6 +138,16 @@ async function updatePage(page, info) {
     }
 
     console.log(`✅ ${priceStr}${divStr}${returnStr}`);
+  }
+}
+
+(async () => {
+  console.log("📊 포트폴리오 업데이트 시작...\n");
+
+  const labels = ["📁 보유 종목", "👀 관심 종목"];
+  for (let i = 0; i < DB_IDS.length; i++) {
+    console.log(`\n${labels[i]}`);
+    await updateDatabase(DB_IDS[i]);
   }
 
   console.log("\n🎉 완료!");
