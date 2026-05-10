@@ -4,8 +4,7 @@ const yahooFinance = new yf.default({ suppressNotices: ['yahooSurvey'] });
 const TOKEN = process.env.NOTION_TOKEN;
 
 const DB_IDS = [
-  process.env.NOTION_DB_ID       || "35c3ef3c-392f-81e3-8fe1-dba9cd5a280a", // 보유 종목
-  process.env.NOTION_WATCHLIST_ID || "35c3ef3c-392f-8130-a0ad-d425edc9b3b7", // 관심 종목
+  process.env.NOTION_DB_ID || "35c3ef3c-392f-81e3-8fe1-dba9cd5a280a",
 ];
 
 const headers = {
@@ -144,10 +143,8 @@ async function updateDatabase(dbId) {
 (async () => {
   console.log("📊 포트폴리오 업데이트 시작...\n");
 
-  const labels = ["📁 보유 종목", "👀 관심 종목"];
-  for (let i = 0; i < DB_IDS.length; i++) {
-    console.log(`\n${labels[i]}`);
-    await updateDatabase(DB_IDS[i]);
+  for (const dbId of DB_IDS) {
+    await updateDatabase(dbId);
   }
 
   console.log("\n🎉 완료!");
