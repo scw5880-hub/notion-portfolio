@@ -15,22 +15,26 @@ const g = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=12
 async function getStockInfo(ticker) {
   try {
     const quote = await yahooFinance.quoteSummary(ticker, {
-      modules: ['price', 'summaryProfile']
+      modules: ['price', 'summaryProfile', 'summaryDetail']
     });
-    const price   = quote.price?.regularMarketPrice ?? null;
-    const website = quote.summaryProfile?.website ?? null;
-    const domain  = website ? new URL(website).hostname.replace('www.', '') : null;
-    return { price, logoUrl: domain ? g(domain) : null };
+    const price    = quote.price?.regularMarketPrice ?? null;
+    const dividend = quote.summaryDetail?.dividendRate ?? 0;
+    const website  = quote.summaryProfile?.website ?? null;
+    const domain   = website ? new URL(website).hostname.replace('www.', '') : null;
+    return { price, dividend, logoUrl: domain ? g(domain) : null };
   } catch (e) {
     console.log(`  ⚠️  ${ticker} 조회 실패: ${e.message}`);
     return { price: null, logoUrl: null };
   }
 }
 
-async function updatePage(pageId, price, logoUrl, hasIcon) {
+async function updatePage(pageId, price, dividend, logoUrl, hasIcon) {
   const body = { properties: {} };
   if (price !== null) {
     body.properties["오늘의 주가"] = { number: Math.round(price) };
+  }
+  if (dividend !== null) {
+    body.properties["주당 배당금"] = { number: Math.round(dividend) };
   }
   if (logoUrl && !hasIcon) {
     body.icon = { type: "external", external: { url: logoUrl } };
@@ -56,12 +60,13 @@ async function updatePage(pageId, price, logoUrl, hasIcon) {
     if (!ticker) { console.log(`⚠️  ${name}: 티커 없음, 스킵`); continue; }
 
     process.stdout.write(`🔍 ${name} (${ticker}) ... `);
-    const { price, logoUrl } = await getStockInfo(ticker);
-    await updatePage(page.id, price, logoUrl, hasIcon);
+    const { price, dividend, logoUrl } = await getStockInfo(ticker);
+    await updatePage(page.id, price, dividend, logoUrl, hasIcon);
 
     const priceStr = price ? `₩${Math.round(price).toLocaleString()}` : "실패";
+    const divStr   = dividend ? ` / 배당 ₩${Math.round(dividend).toLocaleString()}` : "";
     const logoStr  = (!hasIcon && logoUrl) ? " + 로고 추가" : "";
-    console.log(`✅ ${priceStr}${logoStr}`);
+    console.log(`✅ ${priceStr}${divStr}${logoStr}`);
   }
 
   console.log("\n🎉 완료!");
