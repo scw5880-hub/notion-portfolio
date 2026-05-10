@@ -1,0 +1,25 @@
+name: 포트폴리오 가격 업데이트
+
+on:
+  workflow_dispatch:  # 수동 실행 (버튼)
+  schedule:
+    - cron: '0 1 * * *'  # 매일 오전 10시 (한국 시간) 자동 실행
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 패키지 설치
+        run: npm install
+
+      - name: 가격 업데이트 실행
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node update.js

@@ -1,0 +1,8 @@
+{
+  "name": "notion-portfolio",
+  "version": "1.0.0",
+  "main": "update.js",
+  "dependencies": {
+    "yahoo-finance2": "^3.0.0"
+  }
+}
