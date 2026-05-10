@@ -101,9 +101,13 @@ async function updatePage(page, info) {
     body.icon = { type: "external", external: { url: info.logoUrl } };
   }
 
-  await fetch(`https://api.notion.com/v1/pages/${page.id}`, {
+  const r = await fetch(`https://api.notion.com/v1/pages/${page.id}`, {
     method: "PATCH", headers, body: JSON.stringify(body)
   });
+  if (!r.ok) {
+    const err = await r.json();
+    console.error(`  ❌ Notion 업데이트 실패 (${r.status}):`, JSON.stringify(err));
+  }
 }
 
 (async () => {
