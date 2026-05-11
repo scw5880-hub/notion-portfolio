@@ -8,35 +8,32 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #fff; overflow: hidden; }
     #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; }
-    #symbolInput {
-      padding: 6px 12px;
-      font-size: 14px;
-      border: 1px solid #ccc;
+    .btn {
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #ddd;
       border-radius: 6px;
-      width: 180px;
-      margin-right: 6px;
-    }
-    #selector button {
-      padding: 6px 14px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      background: #2962ff;
-      color: white;
+      background: white;
       cursor: pointer;
+      margin: 2px;
     }
-    #selector button:hover { background: #1a4fd6; }
-    #selector label { font-size: 14px; color: #555; margin-right: 8px; }
+    .btn:hover { background: #2962ff; color: white; border-color: #2962ff; }
+    .btn.active { background: #2962ff; color: white; border-color: #2962ff; }
     .tradingview-widget-container { width: 100%; height: 450px; }
   </style>
 </head>
 <body>
 <div id="selector">
-  <label>종목 검색:</label>
-  <input id="symbolInput" type="text" placeholder="예: AAPL, TSLA, NVDA"
-    onkeydown="if(event.key==='Enter') loadWidget(this.value.toUpperCase())"
-  />
-  <button onclick="loadWidget(document.getElementById('symbolInput').value.toUpperCase())">검색</button>
+  <button class="btn active" onclick="setActive(this, 'NASDAQ:NVDA')">NVDA</button>
+  <button class="btn" onclick="setActive(this, 'NASDAQ:AVGO')">AVGO</button>
+  <button class="btn" onclick="setActive(this, 'NASDAQ:AMD')">AMD</button>
+  <button class="btn" onclick="setActive(this, 'NYSE:TSM')">TSM</button>
+  <button class="btn" onclick="setActive(this, 'NYSE:OKLO')">OKLO</button>
+  <button class="btn" onclick="setActive(this, 'NYSE:VRT')">VRT</button>
+  <button class="btn" onclick="setActive(this, 'NYSE:VST')">VST</button>
+  <button class="btn" onclick="setActive(this, 'NASDAQ:CEG')">CEG</button>
+  <button class="btn" onclick="setActive(this, 'NYSE:ETN')">ETN</button>
 </div>
 
 <div class="tradingview-widget-container">
@@ -64,6 +61,12 @@
       "isTransparent": false
     });
     container.appendChild(script);
+  }
+
+  function setActive(el, symbol) {
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    loadWidget(symbol);
   }
 
   loadWidget("NASDAQ:NVDA");
