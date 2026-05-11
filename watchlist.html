@@ -8,14 +8,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #fff; overflow: hidden; }
     #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 6px; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 4px; }
-    .stock-tag {
-      padding: 4px 10px; font-size: 12px; font-weight: 600;
-      border: 1px solid #ddd; border-radius: 6px; background: white;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .remove { font-size: 11px; opacity: 0.5; cursor: pointer; }
-    .remove:hover { opacity: 1; color: red; }
     .search-row { display: flex; align-items: center; gap: 6px; }
     #symbolInput {
       padding: 5px 10px; font-size: 13px;
@@ -30,7 +22,6 @@
 </head>
 <body>
 <div id="selector">
-  <div class="btn-row" id="tagRow"></div>
   <div class="search-row">
     <label>종목 추가:</label>
     <input id="symbolInput" type="text" placeholder="예: NASDAQ:AAPL 또는 AAPL"
@@ -67,17 +58,6 @@
     localStorage.setItem('watchlist_mo', JSON.stringify(list));
   }
 
-  function renderTags() {
-    const row = document.getElementById('tagRow');
-    row.innerHTML = '';
-    getList().forEach(item => {
-      const tag = document.createElement('div');
-      tag.className = 'stock-tag';
-      tag.innerHTML = `${item.d} <span class="remove" onclick="removeStock('${item.s}')">✕</span>`;
-      row.appendChild(tag);
-    });
-  }
-
   function addStock() {
     let val = document.getElementById('symbolInput').value.trim().toUpperCase();
     if (!val) return;
@@ -90,16 +70,8 @@
     }
     list.push({ s: symbol, d: display });
     saveList(list);
-    renderTags();
     loadWidget();
     document.getElementById('symbolInput').value = '';
-  }
-
-  function removeStock(symbol) {
-    const list = getList().filter(i => i.s !== symbol);
-    saveList(list);
-    renderTags();
-    loadWidget();
   }
 
   function loadWidget() {
@@ -137,7 +109,6 @@
     container.appendChild(script);
   }
 
-  renderTags();
   loadWidget();
 </script>
 </body>
