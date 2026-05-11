@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundamental Data</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; background: #fff; overflow: hidden; }
+    #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 6px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .btn {
+      padding: 4px 10px; font-size: 12px; font-weight: 600;
+      border: 1px solid #ddd; border-radius: 6px; background: white;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+    .btn:hover { background: #2962ff; color: white; border-color: #2962ff; }
+    .btn.active { background: #2962ff; color: white; border-color: #2962ff; }
+    .btn .remove { font-size: 11px; opacity: 0.6; margin-left: 2px; cursor: pointer; }
+    .btn .remove:hover { opacity: 1; }
+    .search-row { display: flex; align-items: center; gap: 6px; }
+    #symbolInput {
+      padding: 5px 10px; font-size: 13px;
+      border: 1px solid #ccc; border-radius: 6px; width: 150px;
+    }
+    .action-btn { padding: 5px 12px; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; }
+    .search-btn { background: #2962ff; color: white; }
+    .search-btn:hover { background: #1a4fd6; }
+    .add-btn { background: #00c853; color: white; }
+    .add-btn:hover { background: #009624; }
+    label { font-size: 13px; color: #555; }
+    .tradingview-widget-container { width: 100%; height: 600px; }
+  </style>
+</head>
+<body>
+<div id="selector">
+  <div class="btn-row" id="btnRow"></div>
+  <div class="search-row">
+    <label>검색:</label>
+    <input id="symbolInput" type="text" placeholder="예: AAPL, TSLA"
+      onkeydown="if(event.key==='Enter') searchSymbol()"
+    />
+    <button class="action-btn search-btn" onclick="searchSymbol()">검색</button>
+    <button class="action-btn add-btn" onclick="addToWatchlist()">+ 관심종목 추가</button>
+  </div>
+</div>
+
+<div class="tradingview-widget-container">
+  <div id="tv-fd-widget"></div>
+</div>
+
+<script>
+  const DEFAULT = [
+    { s: 'NASDAQ:NVDA', d: 'NVDA' },
+    { s: 'NASDAQ:AVGO', d: 'AVGO' },
+    { s: 'NASDAQ:AMD',  d: 'AMD'  },
+    { s: 'NYSE:TSM',    d: 'TSM'  },
+    { s: 'NYSE:OKLO',   d: 'OKLO' },
+    { s: 'NYSE:VRT',    d: 'VRT'  },
+    { s: 'NYSE:VST',    d: 'VST'  },
+    { s: 'NASDAQ:CEG',  d: 'CEG'  },
+    { s: 'NYSE:ETN',    d: 'ETN'  },
+  ];
+
+  let currentSymbol = 'NASDAQ:NVDA';
+
+  function getWatchlist() {
+    const saved = localStorage.getItem('watchlist_fd');
+    return saved ? JSON.parse(saved) : DEFAULT;
+  }
+
+  function saveWatchlist(list) {
+    localStorage.setItem('watchlist_fd', JSON.stringify(list));
+  }
+
+  function renderButtons() {
+    const row = document.getElementById('btnRow');
+    row.innerHTML = '';
+    getWatchlist().forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (item.s === currentSymbol ? ' active' : '');
+      btn.innerHTML = `${item.d} <span class="remove" onclick="removeStock(event,'${item.s}')">✕</span>`;
+      btn.onclick = (e) => {
+        if (e.target.classList.contains('remove')) return;
+        setActive(btn, item.s);
+      };
+      row.appendChild(btn);
+    });
+  }
+
+  function setActive(el, symbol) {
+    currentSymbol = symbol;
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    loadWidget(symbol);
+  }
+
+  function searchSymbol() {
+    const val = document.getElementById('symbolInput').value.toUpperCase().trim();
+    if (!val) return;
+    currentSymbol = val;
+    renderButtons();
+    loadWidget(currentSymbol);
+  }
+
+  function addToWatchlist() {
+    const val = document.getElementById('symbolInput').value.toUpperCase().trim();
+    if (!val) return;
+    const symbol = val;
+    const display = val.includes(':') ? val.split(':')[1] : val;
+    const list = getWatchlist();
+    if (list.find(i => i.s === symbol)) return;
+    list.push({ s: symbol, d: display });
+    saveWatchlist(list);
+    currentSymbol = symbol;
+    renderButtons();
+    loadWidget(symbol);
+    document.getElementById('symbolInput').value = '';
+  }
+
+  function removeStock(e, symbol) {
+    e.stopPropagation();
+    const list = getWatchlist().filter(i => i.s !== symbol);
+    saveWatchlist(list);
+    if (currentSymbol === symbol && list.length > 0) {
+      currentSymbol = list[0].s;
+      loadWidget(currentSymbol);
+    }
+    renderButtons();
+  }
+
+  function loadWidget(symbol) {
+    const container = document.getElementById('tv-fd-widget');
+    container.innerHTML = '';
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      "symbol": symbol,
+      "colorTheme": "light",
+      "isTransparent": false,
+      "largeChartUrl": "",
+      "displayMode": "regular",
+      "width": "100%",
+      "height": 600,
+      "locale": "kr"
+    });
+    container.appendChild(script);
+  }
+
+  renderButtons();
+  loadWidget(currentSymbol);
+</script>
+</body>
+</html>
