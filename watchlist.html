@@ -8,6 +8,17 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #fff; overflow: hidden; }
     #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 6px; }
+    #tagRow { display: flex; flex-wrap: wrap; gap: 4px; min-height: 28px; }
+    .tag {
+      padding: 4px 8px; font-size: 12px; font-weight: 600;
+      border: 1px solid #ddd; border-radius: 6px; background: white;
+      display: flex; align-items: center; gap: 4px;
+      cursor: grab; user-select: none;
+    }
+    .tag:active { cursor: grabbing; opacity: 0.5; }
+    .tag.drag-over { border: 2px dashed #2962ff; background: #e8f0fe; }
+    .remove { font-size: 11px; opacity: 0.4; cursor: pointer; }
+    .remove:hover { opacity: 1; color: red; }
     .search-row { display: flex; align-items: center; gap: 6px; }
     #symbolInput {
       padding: 5px 10px; font-size: 13px;
@@ -22,6 +33,7 @@
 </head>
 <body>
 <div id="selector">
+  <div id="tagRow"></div>
   <div class="search-row">
     <label>종목 추가:</label>
     <input id="symbolInput" type="text" placeholder="예: NASDAQ:AAPL 또는 AAPL"
@@ -49,6 +61,8 @@
     { s: 'FX_IDC:USDKRW', d: '원/달러 환율' },
   ];
 
+  let dragSrc = null;
+
   function getList() {
     const saved = localStorage.getItem('watchlist_mo');
     return saved ? JSON.parse(saved) : DEFAULT;
@@ -58,10 +72,52 @@
     localStorage.setItem('watchlist_mo', JSON.stringify(list));
   }
 
+  function renderTags() {
+    const row = document.getElementById('tagRow');
+    row.innerHTML = '';
+    getList().forEach((item, i) => {
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.draggable = true;
+      tag.dataset.index = i;
+      tag.innerHTML = `☰ ${item.d} <span class="remove" data-symbol="${item.s}">✕</span>`;
+
+      tag.addEventListener('dragstart', e => {
+        dragSrc = i;
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      tag.addEventListener('dragover', e => {
+        e.preventDefault();
+        tag.classList.add('drag-over');
+      });
+      tag.addEventListener('dragleave', () => tag.classList.remove('drag-over'));
+      tag.addEventListener('drop', e => {
+        e.preventDefault();
+        tag.classList.remove('drag-over');
+        if (dragSrc === null || dragSrc === i) return;
+        const list = getList();
+        const [moved] = list.splice(dragSrc, 1);
+        list.splice(i, 0, moved);
+        saveList(list);
+        renderTags();
+        loadWidget();
+      });
+
+      tag.querySelector('.remove').addEventListener('click', () => {
+        const list = getList().filter(x => x.s !== item.s);
+        saveList(list);
+        renderTags();
+        loadWidget();
+      });
+
+      row.appendChild(tag);
+    });
+  }
+
   function addStock() {
     let val = document.getElementById('symbolInput').value.trim().toUpperCase();
     if (!val) return;
-    const symbol = val.includes(':') ? val : val;
+    const symbol = val;
     const display = val.includes(':') ? val.split(':')[1] : val;
     const list = getList();
     if (list.find(i => i.s === symbol)) {
@@ -70,6 +126,7 @@
     }
     list.push({ s: symbol, d: display });
     saveList(list);
+    renderTags();
     loadWidget();
     document.getElementById('symbolInput').value = '';
   }
@@ -81,34 +138,25 @@
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
     script.async = true;
     script.innerHTML = JSON.stringify({
-      "colorTheme": "light",
-      "dateRange": "12M",
-      "locale": "kr",
-      "largeChartUrl": "",
-      "isTransparent": false,
-      "showFloatingTooltip": false,
+      "colorTheme": "light", "dateRange": "12M", "locale": "kr",
+      "largeChartUrl": "", "isTransparent": false, "showFloatingTooltip": false,
       "plotLineColorGrowing": "rgba(41, 98, 255, 1)",
       "plotLineColorFalling": "rgba(41, 98, 255, 1)",
-      "gridLineColor": "rgba(240, 243, 250, 0)",
-      "scaleFontColor": "#0F0F0F",
+      "gridLineColor": "rgba(240, 243, 250, 0)", "scaleFontColor": "#0F0F0F",
       "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
       "belowLineFillColorFalling": "rgba(41, 98, 255, 0.12)",
       "belowLineFillColorGrowingBottom": "rgba(41, 98, 255, 0)",
       "belowLineFillColorFallingBottom": "rgba(41, 98, 255, 0)",
       "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
-      "tabs": [{
-        "title": "관심 종목",
-        "symbols": getList().map(i => ({ s: i.s, d: i.d }))
-      }],
+      "tabs": [{ "title": "관심 종목", "symbols": getList().map(i => ({ s: i.s, d: i.d })) }],
       "support_host": "https://www.tradingview.com",
-      "width": "100%",
-      "height": 800,
-      "showSymbolLogo": true,
-      "showChart": true
+      "width": "100%", "height": 800,
+      "showSymbolLogo": true, "showChart": true
     });
     container.appendChild(script);
   }
 
+  renderTags();
   loadWidget();
 </script>
 </body>
