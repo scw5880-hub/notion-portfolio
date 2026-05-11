@@ -7,7 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
-    #tv_chart_container { width: 100%; height: 100vh; }
+    #tv_chart_container { width: 100%; height: 800px; }
   </style>
 </head>
 <body>
@@ -18,7 +18,7 @@
     document.getElementById('tv_chart_container').innerHTML = '';
     new TradingView.widget({
       "width": window.innerWidth,
-      "height": window.innerHeight,
+      "height": 800,
       "symbol": "NASDAQ:NVDA",
       "interval": "D",
       "timezone": "Asia/Seoul",
