@@ -128,7 +128,7 @@ async function updateDatabase(dbId) {
 
   for (const page of data.results) {
     const ticker = page.properties["티커"].rich_text[0]?.plain_text ?? null;
-    if (!ticker) { console.log(`⚠️  티커 없는 행 스킵`); continue; }
+    if (!ticker || !/[a-zA-Z0-9]/.test(ticker)) { continue; } // 빈 행 또는 구분선 스킵
 
     process.stdout.write(`🔍 ${ticker} ... `);
     const info = await getStockInfo(ticker);
