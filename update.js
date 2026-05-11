@@ -96,7 +96,8 @@ async function updatePage(page, info) {
     const eval_amount = info.price * quantity;
     body.properties["수익률"]   = { rich_text: [{ text: { content: formatReturn(pct) } }] };
     body.properties["평가손익"] = { rich_text: [{ text: { content: formatPnL(pnl, info.currency) } }] };
-    body.properties["평가금액"] = { number: Math.round(eval_amount) };
+    body.properties["평가금액"]    = { number: Math.round(eval_amount) };
+    body.properties["평가금액 표시"] = { rich_text: [{ text: { content: formatPrice(eval_amount, info.currency) } }] };
   }
 
   // 등락률: 오늘의 등락 %
