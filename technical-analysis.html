@@ -8,33 +8,35 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; background: #fff; overflow: hidden; }
     #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; }
-    #selector select {
+    #symbolInput {
       padding: 6px 12px;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      cursor: pointer;
-      background: white;
+      width: 180px;
+      margin-right: 6px;
     }
+    #selector button {
+      padding: 6px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      background: #2962ff;
+      color: white;
+      cursor: pointer;
+    }
+    #selector button:hover { background: #1a4fd6; }
     #selector label { font-size: 14px; color: #555; margin-right: 8px; }
     .tradingview-widget-container { width: 100%; height: 450px; }
   </style>
 </head>
 <body>
 <div id="selector">
-  <label>종목 선택:</label>
-  <select onchange="loadWidget(this.value)">
-    <option value="NASDAQ:NVDA">NVDA</option>
-    <option value="NASDAQ:AVGO">AVGO</option>
-    <option value="NASDAQ:AMD">AMD</option>
-    <option value="NYSE:TSM">TSM</option>
-    <option value="NYSE:OKLO">OKLO</option>
-    <option value="NYSE:VRT">VRT</option>
-    <option value="NYSE:VST">VST</option>
-    <option value="NASDAQ:CEG">CEG</option>
-    <option value="NYSE:ETN">ETN</option>
-    <option value="FX_IDC:USDKRW">원/달러 환율</option>
-  </select>
+  <label>종목 검색:</label>
+  <input id="symbolInput" type="text" placeholder="예: AAPL, TSLA, NVDA"
+    onkeydown="if(event.key==='Enter') loadWidget(this.value.toUpperCase())"
+  />
+  <button onclick="loadWidget(document.getElementById('symbolInput').value.toUpperCase())">검색</button>
 </div>
 
 <div class="tradingview-widget-container">
