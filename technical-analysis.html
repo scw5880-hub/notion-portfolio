@@ -6,28 +6,65 @@
   <title>Technical Analysis</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+    html, body { width: 100%; background: #fff; overflow: hidden; }
+    #selector { padding: 8px 12px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; }
+    #selector select {
+      padding: 6px 12px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      background: white;
+    }
+    #selector label { font-size: 14px; color: #555; margin-right: 8px; }
     .tradingview-widget-container { width: 100%; height: 450px; }
   </style>
 </head>
 <body>
-<!-- TradingView Widget BEGIN -->
-<div class="tradingview-widget-container">
-  <div class="tradingview-widget-container__widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-  {
-    "interval": "1D",
-    "width": "100%",
-    "height": 450,
-    "symbol": "NASDAQ:NVDA",
-    "showIntervalTabs": true,
-    "displayMode": "single",
-    "locale": "kr",
-    "colorTheme": "light",
-    "isTransparent": false
-  }
-  </script>
+<div id="selector">
+  <label>종목 선택:</label>
+  <select onchange="loadWidget(this.value)">
+    <option value="NASDAQ:NVDA">NVDA</option>
+    <option value="NASDAQ:AVGO">AVGO</option>
+    <option value="NASDAQ:AMD">AMD</option>
+    <option value="NYSE:TSM">TSM</option>
+    <option value="NYSE:OKLO">OKLO</option>
+    <option value="NYSE:VRT">VRT</option>
+    <option value="NYSE:VST">VST</option>
+    <option value="NASDAQ:CEG">CEG</option>
+    <option value="NYSE:ETN">ETN</option>
+    <option value="FX_IDC:USDKRW">원/달러 환율</option>
+  </select>
 </div>
-<!-- TradingView Widget END -->
+
+<div class="tradingview-widget-container">
+  <div id="tv-ta-widget"></div>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js"></script>
+<script>
+  function loadWidget(symbol) {
+    const container = document.getElementById('tv-ta-widget');
+    container.innerHTML = '';
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      "interval": "1D",
+      "width": "100%",
+      "height": 450,
+      "symbol": symbol,
+      "showIntervalTabs": true,
+      "displayMode": "single",
+      "locale": "kr",
+      "colorTheme": "light",
+      "isTransparent": false
+    });
+    container.appendChild(script);
+  }
+
+  loadWidget("NASDAQ:NVDA");
+</script>
 </body>
 </html>
