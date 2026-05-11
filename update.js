@@ -50,14 +50,15 @@ async function getStockInfo(ticker) {
       modules: ['price', 'summaryProfile', 'summaryDetail', 'assetProfile']
     });
 
-    const price    = quote.price?.regularMarketPrice ?? null;
-    const currency = quote.price?.currency === "KRW" ? "KRW" : "USD";
-    const name     = quote.price?.shortName ?? quote.price?.longName ?? null;
-    const dividend = quote.summaryDetail?.dividendRate ?? 0;
-    const website  = quote.assetProfile?.website ?? quote.summaryProfile?.website ?? null;
-    const domain   = website ? new URL(website).hostname.replace("www.", "") : null;
+    const price      = quote.price?.regularMarketPrice ?? null;
+    const currency   = quote.price?.currency === "KRW" ? "KRW" : "USD";
+    const name       = quote.price?.shortName ?? quote.price?.longName ?? null;
+    const dividend   = quote.summaryDetail?.dividendRate ?? 0;
+    const changePct  = quote.price?.regularMarketChangePercent ?? null;
+    const website    = quote.assetProfile?.website ?? quote.summaryProfile?.website ?? null;
+    const domain     = website ? new URL(website).hostname.replace("www.", "") : null;
 
-    return { price, currency, name, dividend, logoUrl: domain ? g(domain) : null };
+    return { price, currency, name, dividend, changePct, logoUrl: domain ? g(domain) : null };
   } catch (e) {
     console.log(`  ⚠️  ${ticker} 조회 실패: ${e.message}`);
     return { price: null, currency: null, name: null, dividend: null, logoUrl: null };
@@ -94,6 +95,14 @@ async function updatePage(page, info) {
     const pnl = (info.price - buyPrice) * quantity;
     body.properties["수익률"]  = { rich_text: [{ text: { content: formatReturn(pct) } }] };
     body.properties["평가손익"] = { rich_text: [{ text: { content: formatPnL(pnl, info.currency) } }] };
+  }
+
+  // 등락률: 오늘의 등락 %
+  if (info.changePct !== null) {
+    const sign = info.changePct >= 0 ? "+" : "";
+    body.properties["등락률"] = {
+      rich_text: [{ text: { content: `${sign}${(info.changePct * 100).toFixed(2)}%` } }]
+    };
   }
 
   if (info.logoUrl && !hasIcon) {
