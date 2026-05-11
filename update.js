@@ -93,8 +93,10 @@ async function updatePage(page, info) {
   if (buyPrice !== null && quantity !== null && info.price !== null) {
     const pct = (info.price - buyPrice) / buyPrice * 100;
     const pnl = (info.price - buyPrice) * quantity;
-    body.properties["수익률"]  = { rich_text: [{ text: { content: formatReturn(pct) } }] };
+    const eval_amount = info.price * quantity;
+    body.properties["수익률"]   = { rich_text: [{ text: { content: formatReturn(pct) } }] };
     body.properties["평가손익"] = { rich_text: [{ text: { content: formatPnL(pnl, info.currency) } }] };
+    body.properties["평가금액"] = { rich_text: [{ text: { content: formatPrice(eval_amount, info.currency) } }] };
   }
 
   // 등락률: 오늘의 등락 %
