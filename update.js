@@ -4,7 +4,7 @@ const yahooFinance = new yf.default({ suppressNotices: ['yahooSurvey'] });
 const TOKEN = process.env.NOTION_TOKEN;
 
 const DB_IDS = [
-  "35c3ef3c-392f-81e3-8fe1-dba9cd5a280a",  // 보유 종목
+  "35e3ef3c-392f-814a-8b16-f993709b2f14",  // 보유 종목
   "35e3ef3c-392f-81e0-83e0-de4c361b70b7",  // 관심 종목
 ];
 const TRADING_DB_ID = "35e3ef3c-392f-81d2-b2b1-c474b17c7684";
